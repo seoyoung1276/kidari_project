@@ -22,6 +22,14 @@ const pool = mysql.createPool({
     database: 'study'
 });
 
+const loginRequired = function(req, res, next) {
+    if(req.session.user) {
+        next()
+    } else {
+        res.status(401).json({ result: "현재 로그인 상태가 아닙니다."})
+    }
+}
+
 app.post("/api/users", (req, res) => {
     console.log(req.body)
     pool.query("insert into users(email, password, name) values(?, ?, ?)",
@@ -41,7 +49,7 @@ app.delete("/api/users/:email", (req, res)=>{
     [email],
     function(err, rows, fields){
         if(rows.affectedRows === 0) {
-            res.json({ result: "존재하지 않는 사용자입니다."})
+            res.status(404).json({ result: "존재하지 않는 사용자입니다."})
         }else{
             res.json({ result: "ok"})
         }
@@ -51,21 +59,21 @@ app.delete("/api/users/:email", (req, res)=>{
 
 app.get("/api/users/:email", (req, res) =>{
     pool.query("SELECT * FROM users WHERE email = ?",
-    [email,
+    [req.params.email],
     function(err, rows, fields){
         if(rows.length === 0) {
             res.json({ result: "사용자 정보가 없습니다."})
         }else{
-            res.json({result : "ok"})
+            res.json({ result : rows[0] })
         }
-    }])
+    })
 })
 
-app.get("/api/users", (req, res)=> {
-    pool.query("SELECT * FROM users", 
-    function(err, rows, fields){
-        res.json(rows)
-    })
+app.get("/api/users", loginRequired, (req, res)=> {
+        pool.query("SELECT * FROM users", 
+        function(err, rows, fields){
+            res.json(rows)
+        })
 })
 
 app.post("/api/login", (req, res) =>{
@@ -76,7 +84,7 @@ app.post("/api/login", (req, res) =>{
     [email],
     function(err, rows, fields){
         if(rows.length === 0){
-            res.json({ reuslt: "존재하지 않는 사용자입니다." })
+            res.status(404).json({ reuslt: "존재하지 않는 사용자입니다." })
         }else{
            const user = rows[0]
            if(user.password === password) {
@@ -91,14 +99,15 @@ app.post("/api/login", (req, res) =>{
     })
 })
 
-app.get("/api/me", (req, res) => {
-    console.log(req.session)
-    if(req.session.user){
-        res.json({result : req.session.user })
-    }else{
-        res.json({ result: "현재 로그인 상태가 아닙니다."})
-    }
+app.get("/api/logout", (req, res) => {
+    req.session.destroy()
+    res.json({ result : "로그아웃 완료"})
 })
+
+app.get("/api/me", loginRequired, (req, res) => {
+    res.json({ result: req.session.user })
+})
+
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
