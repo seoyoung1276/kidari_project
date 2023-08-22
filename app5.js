@@ -2,6 +2,9 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const mysql = require('mysql2');
 const session = require('express-session')
+const bcrypt = require('bcrypt');
+const SALT_ROUNDS = 10;  
+
 
 const app = express()
 app.use(session({
@@ -9,7 +12,7 @@ app.use(session({
     resave: false,
     saveUninitialized: true,
     cookie: {
-        maxAge: 60 * 60
+        maxAge: 60 * 60 * 1000
     }
 }))
 
@@ -32,15 +35,20 @@ const loginRequired = function(req, res, next) {
 
 app.post("/api/users", (req, res) => {
     console.log(req.body)
-    pool.query("insert into users(email, password, name) values(?, ?, ?)",
-    [req.body.email, req.body.password, req.body.name],
-    function(err, rows, fields){
-        if(err) {
-            res.json({result : err})
-        } else {
-            res.json({result : "ok"})
-        }
+    const myPlaintextPassword = req.body.password
+
+    bcrypt.hash(myPlaintextPassword, SALT_ROUNDS, function(err, hash){
+        pool.query("insert into users(email, password, name) values(?, ?, ?)",
+        [req.body.email, hash , req.body.name],
+        function(err, rows, fields){
+            if(err) {
+                res.json({result : err})
+            } else {
+                res.json({result : "ok"})
+            }
+        })
     })
+    
 })
 
 app.delete("/api/users/:email", (req, res)=>{
