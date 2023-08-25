@@ -37,6 +37,7 @@ app.post("/api/users", (req, res) => {
     console.log(req.body)
     const myPlaintextPassword = req.body.password
 
+    // 해시 함수
     bcrypt.hash(myPlaintextPassword, SALT_ROUNDS, function(err, hash){
         pool.query("insert into users(email, password, name) values(?, ?, ?)",
         [req.body.email, hash , req.body.name],
@@ -95,13 +96,15 @@ app.post("/api/login", (req, res) =>{
             res.status(404).json({ reuslt: "존재하지 않는 사용자입니다." })
         }else{
            const user = rows[0]
-           if(user.password === password) {
-            req.session.user = user
-            req.session.save();
-            res.json({ result : "로그인 성공"})
+           bcrypt.compare(password, rows[0].password, function(err, result){           
+            if(result) {
+                req.session.user = user
+                req.session.save();
+                res.json({ result : "로그인 성공"})
            }else{
             res.json({ result : "로그인 실패 (비번 틀림)"})
            }
+        })
         
         }
     })
