@@ -35,10 +35,6 @@ app.use((req, res, next)=>{
     next()
 })
 
-// req.session.name = 'test' // 세션 등록
-// req.sessionID // 세션 아이디 확인
-// req.session.destory() // 세션 모두 제거
-
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
