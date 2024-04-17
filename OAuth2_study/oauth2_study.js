@@ -66,7 +66,7 @@ app.get('/signup/redirect', async (req, res) => {
     });
   
   	// 구글 인증 서버에서 json 형태로 반환 받은 body 클라이언트에 반환
-    res.json(resp2.data.email);
+    res.json(resp2.data);
 });
 app.listen(3000, () => {
     console.log('server is running at 3000')
